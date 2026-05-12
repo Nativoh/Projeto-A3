@@ -1,0 +1,173 @@
+CREATE database if not exists controle_financeiro;
+
+USE controle_financeiro;
+
+-- ======== TABELA USUARIOS==========
+
+CREATE TABLE usuarios (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    senha VARCHAR(255) NOT NULL,
+    funcao ENUM('ADMIN', 'USER') NOT NULL DEFAULT 'USER',
+    renda_mensal DECIMAL(15,2) DEFAULT 0.00,
+    perfil_investidor ENUM('CONSERVADOR','MODERADO', 'AGRESSIVO') DEFAULT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- ========= TABELA CATEGORIAS =========
+
+CREATE TABLE categorias (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT  NULL,
+    nome VARCHAR(100) NOT NULL,
+    tipo ENUM('INCOME', 'EXPENSE') NOT NULL,
+    cor VARCHAR(7) DEFAULT '#6B7280',
+    icone VARCHAR(50) DEFAULT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- ========== TABELA TRANSAÇOES =============
+
+CREATE TABLE  transacoes (
+    id INT AUTO_INCREMENT PRIMARY KEY ,
+    usuario_id INT NOT NULL,
+    categoria_id INT NOT NULL,
+    valor DECIMAL(15,2) NOT NULL,
+    tipo ENUM('INCOME', 'EXPENSE') NOT NULL,
+    descricao VARCHAR(255) DEFAULT NULL,
+    data_transacao DATE NOT NULL,
+    parcelado BOOLEAN DEFAULT NULL,
+    numero_parcela INT DEFAULT NULL,
+    total_parcela INT DEFAULT NULL,
+    grupo_parcela VARCHAR(36) DEFAULT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+);
+
+-- ============METAS==============
+
+CREATE TABLE metas (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT DEFAULT NULL,
+    valor_alvo DECIMAL(15,2) NOT NULL,
+    valor_atual DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    prazo DATE NOT NULL,
+    status ENUM('ATIVA', 'CONCLUIDA', 'CANCELADA') NOT NULL DEFAULT 'ATIVA',
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- ===================== CONTRIBUICOES_META ===========
+
+CREATE TABLE contribuicoes_meta(
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    meta_id INT NOT NULL,
+    valor DECIMAL(15,2) NOT NULL,
+    observacao VARCHAR(255) DEFAULT NULL,
+    data_contribuicao DATE NOT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (meta_id) REFERENCES metas(id) ON DELETE CASCADE
+);
+
+-- ====================== ORCAMENTOS ==============
+
+CREATE TABLE orcamentos(
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    categoria_id INT NOT NULL,
+    valor_limite DECIMAL(15,2) NOT NULL,
+    mes TINYINT NOT NULL, -- 1 A 12
+    ano SMALLINT NOT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_orcamento (usuario_id, categoria_id, mes, ano),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+);
+
+-- ============== DICAS_FINANCEIRAS ==============
+
+CREATE TABLE dicas_financeiras (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(200) NOT NULL,
+    conteudo TEXT NOT NULL,
+    categoria ENUM('GASTO', 'POUPANCA', 'INVESTIMENTO','CONSCIENTE') NOT NULL,
+    condicao_gatilho ENUM('RISCO', 'ATENCAO', 'SAUDAVEL') NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ====================== INDICES DE PERFORMANCE ==================
+
+CREATE INDEX idx_transacoes_usuario_data
+    ON transacoes(usuario_id, data_transacao);
+
+CREATE INDEX idx_transacoes_categoria
+    ON transacoes(categoria_id);
+
+CREATE INDEX idx_metas_usuario_status
+    ON metas(usuario_id, status);
+
+CREATE INDEX idx_orcamento_usuario_mes
+    ON orcamentos(usuario_id, mes, ano);
+
+
+-- ========================== RESUMO MENSAL VISTO PELO O USUARIO: =====================
+
+ CREATE VIEW vw_resumo_mensal AS
+SELECT
+    t.usuario_id,
+    YEAR(t.data_transacao) AS ano,
+    MONTH(t.data_transacao) AS mes,
+    SUM(CASE WHEN t.tipo = 'INCOME' THEN t.valor ELSE 0 END) AS total_receitas,
+    SUM(CASE WHEN t.tipo = 'EXPENSE' THEN t.valor ELSE 0 END) AS total_despesas,
+    SUM(CASE WHEN t.tipo = 'INCOME' THEN t.valor
+        WHEN t.tipo = 'EXPENSE' THEN -t.valor ELSE 0
+        END ) AS saldo
+ FROM transacoes t
+ GROUP BY t.usuario_id, YEAR(t.data_transacao), MONTH(t.data_transacao);
+
+-- ============================= DADOS INICIAIS ===============================
+
+INSERT INTO usuarios (nome, email, senha, funcao) VALUES
+    ('Adminstrador', 'adminstrador@teste.com', '123', 'ADMIN');
+
+INSERT INTO categorias (usuario_id, nome, tipo, icone) VALUES
+    (NULL, 'Salario', 'INCOME', 'briefcase'),
+    (NULL, 'Freelance', 'INCOME', 'laptop'),
+    (NULL, 'Alimentacao', 'EXPENSE', 'utensils'),
+    (NULL, 'Transporte', 'EXPENSE', 'car'),
+    (NULL, 'Moradia', 'EXPENSE', 'home'),
+    (NULL, 'Saude', 'EXPENSE', 'heart'),
+    (NULL, 'Lazer', 'EXPENSE', 'smile'),
+    (NULL, 'Educacao', 'EXPENSE', 'book');
+
+INSERT INTO dicas_financeiras (titulo, conteudo, categoria, condicao_gatilho) VALUES
+    ('Atenção com os gastos!!',
+     'Seus gastos estão acima de 80% da sua renda Revise seus orçamentos',
+     'GASTO', 'RISCO'),
+    ('Situação critica',
+     'Você ultrapassou 90% da renda em despesas. Corte gastos não essenciais.',
+    'GASTO', 'RISCO'),
+    ('Parabéns! Hora de investir',
+     'Seus gastos estão controlados. Considere aplicar o saldo em renda fixa.',
+     'INVESTIMENTO', 'SAUDAVEL');
+
+
+
+
+
