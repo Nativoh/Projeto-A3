@@ -4,6 +4,7 @@
  */
 package com.controleFinanceiro.view;
 
+import com.controleFinanceiro.controller.SessaoAtual;
 import com.controleFinanceiro.model.Usuario;
 import com.controleFinanceiro.DAO.UsuarioDAO;
 import javax.swing.JOptionPane;
@@ -113,6 +114,7 @@ public class TelaLogin extends javax.swing.JFrame {
         Usuario usuario = dao.Login(email,senha);
 
         if (usuario != null) {
+            SessaoAtual.iniciar(usuario);
             JOptionPane.showMessageDialog(this, "Bem-vindo, " + usuario.getNome() + "!");
 
 
