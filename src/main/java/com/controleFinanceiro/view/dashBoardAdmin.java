@@ -9,6 +9,8 @@ import java.awt.*;
 public class dashBoardAdmin extends JFrame {
 
     private AdminDashboardPanel adminDashboardPanel;
+    private UsuariosPanel  usuariosPanel;
+    private CategoriasGlobaisPanel categoriasGlobaisPanel;
     private CardLayout          cardLayout;
     private JPanel              painelConteudo;
 
@@ -77,17 +79,14 @@ public class dashBoardAdmin extends JFrame {
         btnDashboard  = botaoMenu("Dashboard");
         btnUsuarios   = botaoMenu("Usuarios");
         btnCategorias = botaoMenu("Categorias");
-        btnDicas      = botaoMenu("Dicas Financeiras");
 
         btnDashboard.addActionListener(e  -> navegarPara("dashboard",  btnDashboard));
         btnUsuarios.addActionListener(e   -> navegarPara("usuarios",   btnUsuarios));
         btnCategorias.addActionListener(e -> navegarPara("categorias", btnCategorias));
-        btnDicas.addActionListener(e      -> navegarPara("dicas",      btnDicas));
 
         lateral.add(btnDashboard);
         lateral.add(btnUsuarios);
         lateral.add(btnCategorias);
-        lateral.add(btnDicas);
         lateral.add(Box.createVerticalGlue());
         lateral.add(separador());
         lateral.add(botaoLogout());
@@ -101,10 +100,12 @@ public class dashBoardAdmin extends JFrame {
         painelConteudo.setBackground(new Color(15, 23, 42));
 
         adminDashboardPanel = new AdminDashboardPanel();
+        usuariosPanel = new UsuariosPanel();
+        categoriasGlobaisPanel = new CategoriasGlobaisPanel();
 
         painelConteudo.add(wrapScroll(adminDashboardPanel), "dashboard");
-        painelConteudo.add(placeholder("Usuarios",          "Em breve"), "usuarios");
-        painelConteudo.add(placeholder("Categorias Globais","Em breve"), "categorias");
+        painelConteudo.add(wrapScroll(usuariosPanel),       "usuarios");
+        painelConteudo.add(wrapScroll(categoriasGlobaisPanel), "categorias");
         painelConteudo.add(placeholder("Dicas Financeiras", "Em breve"), "dicas");
 
         return painelConteudo;

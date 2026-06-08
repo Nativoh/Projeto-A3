@@ -27,6 +27,14 @@ public class DashboardPanel extends JPanel {
 
     private final DashboardController controller;
 
+    // ── Filtros de periodo ─────────────────────────────────────────────────
+    private JComboBox<String>  cmbMes;
+    private JComboBox<Integer> cmbAno;
+
+    // ── Area de conteudo dinamico ──────────────────────────────────────────
+    private JPanel painelConteudo;
+    private JScrollPane scrollConteudo;
+
     private static final Color COR_FUNDO = new Color(15, 23, 42);
     private static final Color VERDE     = new Color(16, 185, 129);
     private static final Color VERMELHO  = new Color(239, 68, 68);
@@ -38,92 +46,172 @@ public class DashboardPanel extends JPanel {
 
     public DashboardPanel() {
         this.controller = new DashboardController();
-        configurarLayout();
+        setLayout(new BorderLayout(0, 0));
+        setBackground(COR_FUNDO);
+        setBorder(BorderFactory.createEmptyBorder(16, 16, 8, 16));
+
+        add(criarBarraFiltro(), BorderLayout.NORTH);
+        add(criarAreaConteudo(), BorderLayout.CENTER);
+
         carregarDados();
     }
 
-    private void configurarLayout() {
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBackground(COR_FUNDO);
-        setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+    // ══════════════════════════════════════════════════════════════════════
+    // BARRA DE FILTRO — fixa no topo
+    // ══════════════════════════════════════════════════════════════════════
+
+    private JPanel criarBarraFiltro() {
+        JPanel barra = new JPanel(new BorderLayout());
+        barra.setBackground(COR_FUNDO);
+        barra.setBorder(new EmptyBorder(0, 0, 12, 0));
+
+        // Titulo
+        JPanel titles = new JPanel(new BorderLayout());
+        titles.setBackground(COR_FUNDO);
+        JLabel lblTitulo = new JLabel("Dashboard");
+        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
+        titles.add(lblTitulo, BorderLayout.NORTH);
+        barra.add(titles, BorderLayout.WEST);
+
+        // Filtros
+        JPanel filtros = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        filtros.setBackground(COR_FUNDO);
+
+        JLabel lPer = new JLabel("Periodo:");
+        lPer.setForeground(TEXTO_SEC);
+        lPer.setFont(new Font("Arial", Font.PLAIN, 13));
+
+        String[] meses = {
+                "Janeiro","Fevereiro","Marco","Abril","Maio","Junho",
+                "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+        };
+        cmbMes = new JComboBox<>(meses);
+        cmbMes.setSelectedIndex(LocalDate.now().getMonthValue() - 1);
+        estilizarCombo(cmbMes, 120);
+
+        int anoAtual = LocalDate.now().getYear();
+        cmbAno = new JComboBox<>(new Integer[]{
+                anoAtual - 2, anoAtual - 1, anoAtual, anoAtual + 1});
+        cmbAno.setSelectedItem(anoAtual);
+        estilizarCombo(cmbAno, 80);
+
+        JButton btnAplicar = new JButton("Aplicar");
+        btnAplicar.setBackground(AZUL);
+        btnAplicar.setForeground(Color.WHITE);
+        btnAplicar.setFont(new Font("Arial", Font.BOLD, 12));
+        btnAplicar.setFocusPainted(false);
+        btnAplicar.setBorderPainted(false);
+        btnAplicar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnAplicar.setPreferredSize(new Dimension(80, 32));
+        btnAplicar.addActionListener(e -> carregarDados());
+
+        // Atalho: Enter no combo ja aplica
+        cmbMes.addActionListener(e -> carregarDados());
+        cmbAno.addActionListener(e -> carregarDados());
+
+        filtros.add(lPer);
+        filtros.add(cmbMes);
+        filtros.add(cmbAno);
+        filtros.add(btnAplicar);
+        barra.add(filtros, BorderLayout.EAST);
+
+        return barra;
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // AREA DE CONTEUDO — scroll interno
+    // ══════════════════════════════════════════════════════════════════════
+
+    private JScrollPane criarAreaConteudo() {
+        painelConteudo = new JPanel();
+        painelConteudo.setLayout(new BoxLayout(painelConteudo, BoxLayout.Y_AXIS));
+        painelConteudo.setBackground(COR_FUNDO);
+
+        scrollConteudo = new JScrollPane(painelConteudo);
+        scrollConteudo.setBorder(null);
+        scrollConteudo.getVerticalScrollBar().setUnitIncrement(16);
+        scrollConteudo.setBackground(COR_FUNDO);
+        scrollConteudo.getViewport().setBackground(COR_FUNDO);
+        return scrollConteudo;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // CARREGAR DADOS
+    // ══════════════════════════════════════════════════════════════════════
+
     private void carregarDados() {
-        int mes = LocalDate.now().getMonthValue();
-        int ano = LocalDate.now().getYear();
+        int mes = cmbMes.getSelectedIndex() + 1;
+        int ano = (Integer) cmbAno.getSelectedItem();
+
         DadosDashboard dados = controller.carregarDados(mes, ano);
 
-        // 1. Titulo
-        add(criarTitulo("Dashboard", "Resumo de " + mes + "/" + ano));
-        add(Box.createVerticalStrut(12));
+        // Reconstroi o conteudo
+        painelConteudo.removeAll();
 
-        // 2. Saude financeira
-        add(criarPainelSaude(dados.getSaude(), dados.getDica()));
-        add(Box.createVerticalStrut(12));
+        // Subtitulo com mes/ano selecionado
+        JLabel lSub = new JLabel("Resumo de " + meses()[mes - 1] + "/" + ano);
+        lSub.setForeground(TEXTO_SEC);
+        lSub.setFont(new Font("Arial", Font.PLAIN, 12));
+        lSub.setBorder(new EmptyBorder(0, 0, 12, 0));
+        lSub.setAlignmentX(LEFT_ALIGNMENT);
+        painelConteudo.add(lSub);
 
-        // 3. Cards KPI
+        // 1. Saude financeira
+        JPanel saude = criarPainelSaude(dados.getSaude(), dados.getDica());
+        saude.setAlignmentX(LEFT_ALIGNMENT);
+        painelConteudo.add(saude);
+        painelConteudo.add(Box.createVerticalStrut(12));
+
+        // 2. Cards KPI
         JPanel kpi = criarCardsKPI(dados.getResumo(), dados.getTotalMetasAtivas());
         kpi.setMaximumSize(new Dimension(Integer.MAX_VALUE, 95));
-        add(kpi);
-        add(Box.createVerticalStrut(12));
+        kpi.setAlignmentX(LEFT_ALIGNMENT);
+        painelConteudo.add(kpi);
+        painelConteudo.add(Box.createVerticalStrut(12));
 
-        // 4. Graficos
+        // 3. Graficos
         JPanel graficos = new JPanel(new GridLayout(1, 2, 10, 0));
         graficos.setOpaque(false);
         graficos.add(criarGraficoPizza(dados.getGastosPorCategoria()));
         graficos.add(criarGraficoBarras(dados.getEvolucaoMeses()));
         graficos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 240));
-        add(graficos);
-        add(Box.createVerticalStrut(12));
+        graficos.setAlignmentX(LEFT_ALIGNMENT);
+        painelConteudo.add(graficos);
+        painelConteudo.add(Box.createVerticalStrut(12));
 
-        // 5. Metas e Orcamentos lado a lado
-        boolean temMetas      = dados.getMetasAtivas()  != null && !dados.getMetasAtivas().isEmpty();
-        boolean temOrcamentos = dados.getOrcamentos()   != null && !dados.getOrcamentos().isEmpty();
+        // 4. Metas e Orcamentos
+        boolean temMetas      = dados.getMetasAtivas() != null
+                && !dados.getMetasAtivas().isEmpty();
+        boolean temOrcamentos = dados.getOrcamentos() != null
+                && !dados.getOrcamentos().isEmpty();
 
         if (temMetas || temOrcamentos) {
-            JPanel secoes = new JPanel(new GridLayout(1,
-                    (temMetas && temOrcamentos) ? 2 : 1, 12, 0));
+            JPanel secoes = new JPanel(new GridLayout(
+                    1, (temMetas && temOrcamentos) ? 2 : 1, 12, 0));
             secoes.setOpaque(false);
             secoes.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-
+            secoes.setAlignmentX(LEFT_ALIGNMENT);
             if (temMetas)      secoes.add(criarSecaoMetas(dados.getMetasAtivas()));
             if (temOrcamentos) secoes.add(criarSecaoOrcamentos(dados.getOrcamentos()));
-
-            add(secoes);
+            painelConteudo.add(secoes);
         }
+
+        painelConteudo.revalidate();
+        painelConteudo.repaint();
+
+        // Volta o scroll pro topo
+        SwingUtilities.invokeLater(() ->
+                scrollConteudo.getVerticalScrollBar().setValue(0));
     }
 
+    /** Chamado pelo dashBoardPrincipal ao navegar para esta aba. */
     public void recarregar() {
-        removeAll();
         carregarDados();
-        revalidate();
-        repaint();
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // 1. TITULO
-    // ══════════════════════════════════════════════════════════════════════
-
-    private JPanel criarTitulo(String titulo, String subtitulo) {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setOpaque(false);
-        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-
-        JLabel lTitulo = new JLabel(titulo);
-        lTitulo.setForeground(Color.WHITE);
-        lTitulo.setFont(new Font("Arial", Font.BOLD, 20));
-
-        JLabel lSub = new JLabel(subtitulo);
-        lSub.setForeground(new Color(100, 116, 139));
-        lSub.setFont(new Font("Arial", Font.PLAIN, 12));
-
-        p.add(lTitulo, BorderLayout.NORTH);
-        p.add(lSub,    BorderLayout.SOUTH);
-        return p;
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // 2. SAUDE FINANCEIRA
+    // 1. SAUDE FINANCEIRA
     // ══════════════════════════════════════════════════════════════════════
 
     private JPanel criarPainelSaude(String status, DicaFinanceira dica) {
@@ -165,7 +253,7 @@ public class DashboardPanel extends JPanel {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // 3. CARDS KPI
+    // 2. CARDS KPI
     // ══════════════════════════════════════════════════════════════════════
 
     private JPanel criarCardsKPI(ResumoMensal resumo, int totalMetasAtivas) {
@@ -215,7 +303,7 @@ public class DashboardPanel extends JPanel {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // 4A. GRAFICO PIZZA
+    // 3A. GRAFICO PIZZA
     // ══════════════════════════════════════════════════════════════════════
 
     private JPanel criarGraficoPizza(Map<String, Double> gastos) {
@@ -238,7 +326,7 @@ public class DashboardPanel extends JPanel {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // 4B. GRAFICO BARRAS
+    // 3B. GRAFICO BARRAS
     // ══════════════════════════════════════════════════════════════════════
 
     private JPanel criarGraficoBarras(List<ResumoMensal> evolucao) {
@@ -264,7 +352,7 @@ public class DashboardPanel extends JPanel {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // 5A. SECAO DE METAS
+    // 4A. SECAO METAS
     // ══════════════════════════════════════════════════════════════════════
 
     private JPanel criarSecaoMetas(List<Meta> metas) {
@@ -295,7 +383,6 @@ public class DashboardPanel extends JPanel {
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
         card.setAlignmentX(LEFT_ALIGNMENT);
 
-        // Topo: nome + prazo
         JPanel topo = new JPanel(new BorderLayout());
         topo.setBackground(PAINEL);
 
@@ -303,9 +390,11 @@ public class DashboardPanel extends JPanel {
         lblNome.setForeground(Color.WHITE);
         lblNome.setFont(new Font("Arial", Font.BOLD, 13));
 
-        boolean vencida = m.getPrazo() != null && m.getPrazo().isBefore(LocalDate.now());
+        boolean vencida = m.getPrazo() != null
+                && m.getPrazo().isBefore(LocalDate.now());
         JLabel lblPrazo = new JLabel(m.getPrazo() != null
-                ? "Prazo: " + m.getPrazo().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                ? "Prazo: " + m.getPrazo()
+                              .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                 : "");
         lblPrazo.setForeground(vencida ? VERMELHO : TEXTO_SEC);
         lblPrazo.setFont(new Font("Arial", Font.PLAIN, 11));
@@ -314,7 +403,6 @@ public class DashboardPanel extends JPanel {
         topo.add(lblPrazo, BorderLayout.EAST);
         card.add(topo, BorderLayout.NORTH);
 
-        // Baixo: barra + valores
         JPanel baixo = new JPanel(new BorderLayout(8, 0));
         baixo.setBackground(PAINEL);
 
@@ -344,7 +432,7 @@ public class DashboardPanel extends JPanel {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // 5B. SECAO DE ORCAMENTOS
+    // 4B. SECAO ORCAMENTOS
     // ══════════════════════════════════════════════════════════════════════
 
     private JPanel criarSecaoOrcamentos(List<Orcamento> orcamentos) {
@@ -382,7 +470,6 @@ public class DashboardPanel extends JPanel {
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
         card.setAlignmentX(LEFT_ALIGNMENT);
 
-        // Topo: categoria + status
         JPanel topo = new JPanel(new BorderLayout());
         topo.setBackground(PAINEL);
 
@@ -390,7 +477,8 @@ public class DashboardPanel extends JPanel {
         lblCat.setForeground(Color.WHITE);
         lblCat.setFont(new Font("Arial", Font.BOLD, 13));
 
-        JLabel lblStatus = new JLabel(textoStatus + "  " + String.format("%.0f%%", pct));
+        JLabel lblStatus = new JLabel(
+                textoStatus + "  " + String.format("%.0f%%", pct));
         lblStatus.setForeground(corStatus);
         lblStatus.setFont(new Font("Arial", Font.BOLD, 11));
 
@@ -398,7 +486,6 @@ public class DashboardPanel extends JPanel {
         topo.add(lblStatus, BorderLayout.EAST);
         card.add(topo, BorderLayout.NORTH);
 
-        // Baixo: barra + valores
         JPanel baixo = new JPanel(new BorderLayout(8, 0));
         baixo.setBackground(PAINEL);
 
@@ -421,5 +508,24 @@ public class DashboardPanel extends JPanel {
         card.add(baixo, BorderLayout.SOUTH);
 
         return card;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // HELPERS
+    // ══════════════════════════════════════════════════════════════════════
+
+    private <T> void estilizarCombo(JComboBox<T> c, int largura) {
+        c.setBackground(PAINEL);
+        c.setForeground(Color.WHITE);
+        c.setFont(new Font("Arial", Font.PLAIN, 12));
+        c.setPreferredSize(new Dimension(largura, 32));
+        c.setBorder(BorderFactory.createLineBorder(BORDA, 1));
+    }
+
+    private String[] meses() {
+        return new String[]{
+                "Janeiro","Fevereiro","Marco","Abril","Maio","Junho",
+                "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+        };
     }
 }

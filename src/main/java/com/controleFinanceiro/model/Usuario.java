@@ -1,59 +1,56 @@
 package com.controleFinanceiro.model;
 
-
 public class Usuario {
 
     private int    id;
     private String nome;
     private String email;
     private String senha;
-    private String funcao;       // "ADMIN" ou "USER"
-    private double rendaMensal;// usado pelo DashboardService
-    public boolean isAtivo;
-
-    // ── Construtores ───────────────────────────────────────────────────────
+    private String funcao;
+    private double rendaMensal;
+    private String perfilInvestidor;
+    private boolean ativo;
 
     public Usuario() {}
 
     public Usuario(int id, String nome, String email,
                    String senha, String funcao, double rendaMensal) {
-        this.id           = id;
-        this.nome         = nome;
-        this.email        = email;
-        this.senha        = senha;
-        this.funcao       = funcao;
-        this.rendaMensal  = rendaMensal;
+        this.id          = id;
+        this.nome        = nome;
+        this.email       = email;
+        this.senha       = senha;
+        this.funcao      = funcao;
+        this.rendaMensal = rendaMensal;
     }
 
-    // ── Getters e Setters ──────────────────────────────────────────────────
+    public int     getId()                       { return id; }
+    public void    setId(int id)                 { this.id = id; }
 
-    public int    getId()                { return id; }
-    public void   setId(int id)          { this.id = id; }
+    public String  getNome()                     { return nome; }
+    public void    setNome(String v)             { this.nome = v; }
 
-    public String getNome()              { return nome; }
-    public void   setNome(String nome)   { this.nome = nome; }
+    public String  getEmail()                    { return email; }
+    public void    setEmail(String v)            { this.email = v; }
 
-    public String getEmail()             { return email; }
-    public void   setEmail(String email) { this.email = email; }
+    public String  getSenha()                    { return senha; }
+    public void    setSenha(String v)            { this.senha = v; }
 
-    public String getSenha()             { return senha; }
-    public void   setSenha(String senha) { this.senha = senha; }
+    public String  getFuncao()                   { return funcao; }
+    public void    setFuncao(String v)           { this.funcao = v; }
 
-    public String getFuncao()                { return funcao; }
-    public void   setFuncao(String funcao)   { this.funcao = funcao; }
+    public double  getRendaMensal()              { return rendaMensal; }
+    public void    setRendaMensal(double v)      { this.rendaMensal = v; }
 
-    public double getRendaMensal()               { return rendaMensal; }
-    public void   setRendaMensal(double renda)   { this.rendaMensal = renda; }
+    public String  getPerfilInvestidor()         { return perfilInvestidor; }
+    public void    setPerfilInvestidor(String v) { this.perfilInvestidor = v; }
 
-    public boolean isAdmin() {
-        return "ADMIN".equals(this.funcao);
-    }
+    public boolean isAtivo()                     { return ativo; }
+    public void    setAtivo(boolean v)           { this.ativo = v; }
+
+    public boolean isAdmin() { return "ADMIN".equals(funcao); }
 
     @Override
     public String toString() {
         return "Usuario{id=" + id + ", nome=" + nome + ", funcao=" + funcao + "}";
-    }
-
-    public void setAtivo(boolean ativo) {
     }
 }

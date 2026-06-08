@@ -171,7 +171,7 @@ public class AdminDashboardPanel extends JPanel {
     private JPanel criarGraficos(int mes, int ano) {
         JPanel linha = new JPanel(new GridLayout(1, 2, 10, 0));
         linha.setBackground(FUNDO);
-        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 240));
+        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
 
         Map<String, Integer> dist = dao.distribuicaoSaude(mes, ano);
         DefaultPieDataset dsPizza = new DefaultPieDataset();
@@ -343,7 +343,7 @@ public class AdminDashboardPanel extends JPanel {
     private JPanel criarTabelaAlertas(int mes, int ano) {
         JPanel wrapper = new JPanel(new BorderLayout(0, 8));
         wrapper.setBackground(FUNDO);
-        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
+        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
 
         JLabel lblTit = new JLabel("Usuarios com Alertas Financeiros");
         lblTit.setForeground(VERMELHO);
